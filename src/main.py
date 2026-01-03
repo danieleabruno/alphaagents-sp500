@@ -462,7 +462,7 @@ def write_to_sheets(df_neutral: pd.DataFrame, df_averse: pd.DataFrame, logs: pd.
     out_rows.extend(df_averse.fillna("").astype(str).values.tolist())
 
     ws_out.clear()
-    ws_out.update("A1", out_rows)
+out_rows = [[_clean_cell(c) for c in row] for row in out_rows]
 
     # LOGS (truncate to keep sheet manageable)
     logs_small = logs.copy()
@@ -474,7 +474,7 @@ def write_to_sheets(df_neutral: pd.DataFrame, df_averse: pd.DataFrame, logs: pd.
 
     logs_rows = [list(logs_small.columns)] + logs_small.fillna("").astype(str).values.tolist()
     ws_logs.clear()
-    ws_logs.update("A1", logs_rows)
+logs_rows = [[_clean_cell(c) for c in row] for row in logs_rows]
 
     # BACKTEST summary
     bt_rows = []
@@ -487,6 +487,16 @@ def write_to_sheets(df_neutral: pd.DataFrame, df_averse: pd.DataFrame, logs: pd.
                     bt_averse["portfolio_cum_return"], bt_averse["portfolio_sharpe"], bt_averse["benchmark_cum_return"], bt_averse["benchmark_sharpe"]])
 
     ws_bt.clear()
+    def _clean_cell(x):
+    if x is None:
+        return ""
+    if isinstance(x, float) and (math.isnan(x) or math.isinf(x)):
+        return ""
+    return x
+
+bt_rows = [[_clean_cell(c) for c in row] for row in bt_rows]
+ws_bt.update(values=bt_rows, range_name="A1")
+
     ws_bt.update("A1", bt_rows)
 
 
