@@ -1,7 +1,0 @@
-      - name: Run AlphaAgents
-        env:
-          SHEET_ID: ${{ secrets.SHEET_ID }}
-          GSPREAD_SERVICE_ACCOUNT_JSON: ${{ secrets.GSPREAD_SERVICE_ACCOUNT_JSON }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          python src/main.py
