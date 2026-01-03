@@ -1,4 +1,4 @@
-name: AlphaAgents Daily
+name: AlphaAgents Daily.
 
 on:
   schedule:
