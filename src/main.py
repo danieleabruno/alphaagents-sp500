@@ -465,7 +465,9 @@ def write_to_sheets(df_neutral: pd.DataFrame, df_averse: pd.DataFrame, logs: pd.
 out_rows = [[_clean_cell(c) for c in row] for row in out_rows]
 
     # LOGS (truncate to keep sheet manageable)
-    logs_small = logs.copy()
+def write_to_sheets(...):
+    ...
+    logs_small = logs.copy()       # ✅ mismo nivel que las otras líneas
     if "news" in logs_small.columns:
         logs_small["news"] = logs_small["news"].astype(str).str.slice(0, 800)
     for col in ["valuation", "sentiment", "fundamental", "consensus"]:
