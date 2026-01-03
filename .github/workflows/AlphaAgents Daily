@@ -1,4 +1,4 @@
-name: AlphaAgents Daily
+AlphaAgents_Daily.yml
 
 on:
   schedule:
