@@ -9,7 +9,6 @@ import requests
 import feedparser
 import numpy as np
 import pandas as pd
-import yfinance as yf
 import gspread
 from google.oauth2.service_account import Credentials
 from bs4 import BeautifulSoup
@@ -86,39 +85,53 @@ def sec_headers() -> Dict[str, str]:
 # DATA: PRICES (Valuation Agent tool)
 # ----------------------------
 def fetch_price_metrics(ticker: str) -> Dict[str, float]:
-    # 1y daily
-    df = yf.download(ticker, period="1y", interval="1d", auto_adjust=True, progress=False)
-    if df is None or df.empty:
+    api_key = os.environ["FMP_API_KEY"].strip()
+    url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}"
+    params = {"timeseries": 260, "apikey": api_key}
+
+    r = requests.get(url, params=params, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+
+    hist = data.get("historical", [])
+    if not hist or len(hist) < 30:
         return {"price": np.nan, "ret_3m": np.nan, "ret_6m": np.nan, "vol_1y": np.nan, "max_dd_1y": np.nan}
 
-    close = df["Close"].dropna()
-    price = float(close.iloc[-1])
+    # FMP devuelve del más nuevo al más viejo (normalmente).
+    closes = [h.get("close") for h in hist if h.get("close") is not None]
+    closes = [float(x) for x in closes if isinstance(x, (int, float))]
 
-    # returns
+    if len(closes) < 30:
+        return {"price": np.nan, "ret_3m": np.nan, "ret_6m": np.nan, "vol_1y": np.nan, "max_dd_1y": np.nan}
+
+    price = closes[0]
+
     def pct_return(days: int) -> float:
-        if len(close) <= days:
+        # days ~ trading days back, index days
+        if len(closes) <= days:
             return np.nan
-        return float((close.iloc[-1] / close.iloc[-days-1]) - 1.0)
+        return float((closes[0] / closes[days]) - 1.0)
 
-    ret_3m = pct_return(63)   # ~3 months
-    ret_6m = pct_return(126)  # ~6 months
+    ret_3m = pct_return(63)
+    ret_6m = pct_return(126)
 
-    # daily vol annualized
-    rets = close.pct_change().dropna()
+    # daily returns for vol / drawdown
+    close_series = pd.Series(list(reversed(closes)))  # oldest -> newest
+    rets = close_series.pct_change().dropna()
     vol_1y = float(rets.std() * math.sqrt(252)) if len(rets) > 10 else np.nan
 
-    # max drawdown
-    running_max = close.cummax()
-    dd = (close / running_max) - 1.0
+    running_max = close_series.cummax()
+    dd = (close_series / running_max) - 1.0
     max_dd_1y = float(dd.min()) if len(dd) else np.nan
 
     return {
-        "price": price,
+        "price": float(price),
         "ret_3m": ret_3m,
         "ret_6m": ret_6m,
         "vol_1y": vol_1y,
-        "max_dd_1y": max_dd_1y
+        "max_dd_1y": max_dd_1y,
     }
+
 
 
 # ----------------------------
@@ -308,6 +321,14 @@ Return the consensus."""
 # BACKTEST (paper-style downstream metric)
 # ----------------------------
 def backtest_equal_weight(picks: List[str], benchmark_universe: List[str], start: str, end: str) -> Dict[str, float]:
+    # TODO: reimplementar con FMP. Por ahora lo desactivamos para no romper el pipeline.
+    return {
+        "portfolio_cum_return": np.nan,
+        "portfolio_sharpe": np.nan,
+        "benchmark_cum_return": np.nan,
+        "benchmark_sharpe": np.nan
+    }
+
     """
     Basic backtest: equal-weight portfolio of picks vs equal-weight universe benchmark.
     Returns cumulative returns and sharpe (simple).
