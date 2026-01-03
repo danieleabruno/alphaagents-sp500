@@ -1,13 +1,10 @@
 gspread==6.1.4
 google-auth==2.30.0
 python-dateutil==2.9.0.post0
-
-pandas==2.2.2
-numpy==2.0.1
 requests==2.32.3
+feedparser==6.0.11
 beautifulsoup4==4.12.3
 lxml==5.2.2
-feedparser==6.0.11
-
+pandas==2.2.2
+numpy==2.0.1
 openai==1.40.6
-
