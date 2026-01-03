@@ -411,7 +411,7 @@ def run_for_profile(risk_profile: str) -> Tuple[pd.DataFrame, pd.DataFrame, Dict
     # Paper-style backtest window (example): last 4 months
     # (no es “en vivo”; es una métrica downstream como en el paper)
     end = datetime.utcnow().date().isoformat()
-    start = (datetime.utcnow().date() - pd.Timedelta(days=120)).date().isoformat()
+    start = (datetime.utcnow() - pd.Timedelta(days=120)).date().isoformat()
 
     picks = df[df["final_vote"] == "BUY"]["ticker"].head(15).tolist()  # como el paper: pool tech=15; acá top15 BUY
     bt = backtest_equal_weight(picks, TICKERS_50, start=start, end=end)
